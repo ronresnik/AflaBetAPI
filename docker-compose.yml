@@ -1,0 +1,39 @@
+services:
+  db-alfa-bet:
+    image: postgres:11
+    container_name: postgres-alfa-bet
+    volumes:
+      - .postgresdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+    env_file:
+      - ./.env
+    networks:
+      - flaskendpoint_network_alfa_bet
+  # backend-alfa-bet:
+  #   build:
+  #     context: ./
+  #     dockerfile: Dockerfile
+  #   env_file: ./.env
+  #   command: pipenv run flask --debug run -h 0.0.0.0 --cert=adhoc
+  #   ports:
+  #     - "5000:5000"
+  #   depends_on:
+  #     - db-alfa-bet
+  #   networks:
+  #     - flaskendpoint_network_alfa_bet
+
+  pgadmin:
+    container_name: pgadmin-alfa-bet
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db-alfa-bet
+
+networks:
+  flaskendpoint_network_alfa_bet:
