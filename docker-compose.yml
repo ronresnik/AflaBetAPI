@@ -11,18 +11,7 @@ services:
       - ./.env
     networks:
       - flaskendpoint_network_alfa_bet
-  # backend-alfa-bet:
-  #   build:
-  #     context: ./
-  #     dockerfile: Dockerfile
-  #   env_file: ./.env
-  #   command: pipenv run flask --debug run -h 0.0.0.0 --cert=adhoc
-  #   ports:
-  #     - "5000:5000"
-  #   depends_on:
-  #     - db-alfa-bet
-  #   networks:
-  #     - flaskendpoint_network_alfa_bet
+
 
   pgadmin:
     container_name: pgadmin-alfa-bet
@@ -34,6 +23,19 @@ services:
       - "5050:80"
     depends_on:
       - db-alfa-bet
+
+  backend-alfa-bet:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    env_file: ./.env
+    command: pipenv run flask --debug run -h 0.0.0.0 --cert=adhoc
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db-alfa-bet
+    networks:
+      - flaskendpoint_network_alfa_bet
 
 networks:
   flaskendpoint_network_alfa_bet:

@@ -45,7 +45,7 @@ Start the application using Docker Compose:
 
     bash
 
-    docker-compose up
+    docker-compose up --build
 
 The above command will download and build the required images, and then start the containers defined in your docker-compose.yml file.
 
