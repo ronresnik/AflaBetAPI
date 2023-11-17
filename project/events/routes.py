@@ -1,11 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import (abort, current_app, render_template,
                    request, url_for, jsonify)
 from pydantic import BaseModel, ValidationError, validator
 from functools import wraps
 import jwt
 from sqlalchemy.exc import SQLAlchemyError
-from project import db
+from project import db, schedule_event_with_reminder
 from project.models import Event, User
 from config import settings
 
@@ -50,6 +50,8 @@ def schedule_event(user):
         user.events.append(new_event)
         db.session.add(new_event)
         db.session.commit()
+        # Schedule the event with a reminder
+        schedule_event_with_reminder(new_event, user.email)
         return jsonify({'message': 'Event scheduled successfully'}), 201
     except SQLAlchemyError as e:
         db.session.rollback()

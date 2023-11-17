@@ -1,3 +1,4 @@
+from datetime import timedelta
 import logging
 import os
 from logging.handlers import RotatingFileHandler
@@ -8,7 +9,8 @@ from flask import Flask
 from flask.logging import default_handler
 from flask_sqlalchemy import SQLAlchemy
 from flask_swagger_ui import get_swaggerui_blueprint
-
+from flask_mail import Mail, Message
+from apscheduler.schedulers.background import BackgroundScheduler
 # -------------
 # Configuration
 # -------------
@@ -17,7 +19,10 @@ from flask_swagger_ui import get_swaggerui_blueprint
 # the global scope, but without any arguments passed in.  These instances are not attached
 # to the application at this point.
 db = SQLAlchemy()
-
+mail = Mail()
+# Initialize the scheduler
+scheduler = BackgroundScheduler(daemon=True)
+scheduler.start()
 # ----------------------------
 # Application Factory Function
 # ----------------------------
@@ -35,6 +40,7 @@ def create_app():
     register_blueprints(app)
     configure_logging(app)
     register_cli_commands(app)
+    configure_event_reminders(app)
 
     # Check if the database needs to be initialized
     engine = sa.create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
@@ -105,6 +111,17 @@ def configure_logging(app):
     app.logger.info('Starting the Flask User Management App...')
 
 
+def configure_event_reminders(app):
+    # i will not actually send emails
+    app.config['MAIL_SERVER'] = 'mail_server'
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = 'your_username'
+    app.config['MAIL_PASSWORD'] = 'your_password'
+    app.config['MAIL_DEFAULT_SENDER'] = 'your_email@example.com'
+    mail.init_app(app)
+
+
 def register_cli_commands(app):
     @app.cli.command('init_db')
     def initialize_database():
@@ -112,3 +129,27 @@ def register_cli_commands(app):
         db.drop_all()
         db.create_all()
         echo('Initialized the database!')
+
+
+# Define a function to send reminders
+def send_reminder(event, user_email):
+    # Print the reminder to the console
+    print(
+        f"Reminder: User: {user_email} Your event '{event.title}' is scheduled in 30 minutes!")
+
+    # Send reminder via email Code - do not Actually send
+    """
+    msg = Message('Event Reminder', recipients=[user_email])
+    msg.body = f"Hello {user_email},\n\nThis is a reminder that your event '{event.title}' is scheduled in 30 minutes!\n\nBest regards,\nYour Event App"
+    mail.send(msg)
+    """
+
+# Function to schedule an event and reminder
+
+
+def schedule_event_with_reminder(event, user_email):
+    # Schedule the event
+    scheduler.add_job(func=send_reminder, trigger='date',
+                      run_date=event.event_date - timedelta(minutes=30), args=[event, user_email])
+
+    # Save the event to the database or perform any other necessary operations
