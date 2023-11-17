@@ -17,6 +17,7 @@ user_event_association = db.Table(
 
 
 class User(UserMixin, db.Model):
+
     """
     Class that represents a user of the application
 
@@ -25,7 +26,6 @@ class User(UserMixin, db.Model):
         * hashed password - hashed password (using werkzeug.security)
         * registered_on - date & time that the user registered
 
-    REMEMBER: Never store the plaintext password in a database!
     """
 
     __tablename__ = 'users'

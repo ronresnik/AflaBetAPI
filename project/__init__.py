@@ -6,9 +6,8 @@ import sqlalchemy as sa
 from click import echo
 from flask import Flask
 from flask.logging import default_handler
-from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
-
+from flask_swagger_ui import get_swaggerui_blueprint
 
 # -------------
 # Configuration
@@ -18,13 +17,11 @@ from flask_sqlalchemy import SQLAlchemy
 # the global scope, but without any arguments passed in.  These instances are not attached
 # to the application at this point.
 db = SQLAlchemy()
-login = LoginManager()
-login.login_view = "users.login"
-
 
 # ----------------------------
 # Application Factory Function
 # ----------------------------
+
 
 def create_app():
     # Create the Flask application
@@ -61,14 +58,9 @@ def initialize_extensions(app):
     # Since the application instance is now created, pass it to each Flask
     # extension instance to bind it to the Flask application instance (app)
     db.init_app(app)
-    login.init_app(app)
 
     # Flask-Login configuration
     from project.models import User
-
-    @login.user_loader
-    def load_user(user_id):
-        return User.query.filter(User.id == int(user_id)).first()
 
 
 def register_blueprints(app):
@@ -77,6 +69,16 @@ def register_blueprints(app):
     from project.users import users_blueprint
 
     app.register_blueprint(users_blueprint)
+
+    swagger_ui_blueprint = get_swaggerui_blueprint(
+        app.config['SWAGGER_URL'],
+        app.config['API_URL'],
+        config={
+            'app_name': 'Access API'
+        }
+    )
+    app.register_blueprint(swagger_ui_blueprint,
+                           url_prefix=app.config['SWAGGER_URL'])
 
 
 def configure_logging(app):
