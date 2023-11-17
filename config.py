@@ -38,6 +38,8 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Logging
     LOG_WITH_GUNICORN = True  # os.getenv('LOG_WITH_GUNICORN', default=False)
+    SWAGGER_URL = "/swagger"
+    API_URL = "/static/swagger.json"
 
 
 class ProductionConfig(Config):
