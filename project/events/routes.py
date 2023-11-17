@@ -4,7 +4,7 @@ from flask import (abort, current_app, render_template,
 from pydantic import BaseModel, ValidationError, validator
 from functools import wraps
 import jwt
-
+from sqlalchemy.exc import SQLAlchemyError
 from project import db
 from project.models import Event, User
 from config import settings
@@ -36,18 +36,25 @@ def token_required(f):
 @events_blueprint.route('/events', methods=['POST'])
 @token_required
 def schedule_event(user):
-    data = request.get_json()
-    new_event = Event(
-        title=data['title'],
-        description=data['description'],
-        venue=data['venue'],
-        event_date=datetime.strptime(data['event_date'], '%Y-%m-%d %H:%M:%S'),
-        tags=data.get('tags', []),
-    )
-    user.events.append(new_event)
-    db.session.add(new_event)
-    db.session.commit()
-    return jsonify({'message': 'Event scheduled successfully'}), 201
+    try:
+        data = request.get_json()
+        new_event = Event(
+            title=data['title'],
+            description=data['description'],
+            venue=data['venue'],
+            event_date=datetime.strptime(
+                data['event_date'], '%Y-%m-%d %H:%M:%S'),
+            tags=data.get('tags', []),
+        )
+        user.events.append(new_event)
+        db.session.add(new_event)
+        db.session.commit()
+        return jsonify({'message': 'Event scheduled successfully'}), 201
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+    except Exception as e:
+        return jsonify({'message': str(e)}), 400
 
 # Endpoint to retrieve a list of all scheduled events
 
@@ -80,71 +87,86 @@ def get_all_events():
         events = base_query.all()
 
     """
-    events = Event.query.all()
-    event_list = []
-    for event in events:
-        event_list.append({
-            'id': event.id,
-            'title': event.title,
-            'description': event.description,
-            'venue': event.venue,
-            'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
-            'tags': event.tags,
-            'participants': event.participants,
-        })
-    return jsonify({'events': event_list})
+    try:
+        events = Event.query.all()
+        event_list = []
+        for event in events:
+            event_list.append({
+                'id': event.id,
+                'title': event.title,
+                'description': event.description,
+                'venue': event.venue,
+                'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'tags': event.tags,
+                'participants': event.participants,
+            })
+        return jsonify({'events': event_list})
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
 
 # Endpoint to retrieve details of a specific event
-
-
 @events_blueprint.route('/events/<int:event_id>', methods=['GET'])
 @token_required
 def get_event_details(user, event_id):
-    event = Event.query.get(event_id)
-    if event:
-        event_details = {
-            'id': event.id,
-            'title': event.title,
-            'description': event.description,
-            'venue': event.venue,
-            'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
-            'tags': event.tags,
-            'participants': event.participants,
-        }
-        return jsonify(event_details)
-    else:
-        return jsonify({'message': 'Event not found'}), 404
+    try:
+        event = Event.query.get(event_id)
+        if event:
+            event_details = {
+                'id': event.id,
+                'title': event.title,
+                'description': event.description,
+                'venue': event.venue,
+                'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'tags': event.tags,
+                'participants': event.participants,
+            }
+            return jsonify(event_details)
+        else:
+            return jsonify({'message': 'Event not found'}), 404
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
 
 # Endpoint to update details of a specific event
-
-
 @events_blueprint.route('/events/<int:event_id>', methods=['PUT'])
 @token_required
 def update_event(user, event_id):
-    event = Event.query.get(event_id)
-    if event:
-        data = request.get_json()
-        event.title = data['title']
-        event.description = data['description']
-        event.venue = data['venue']
-        event.event_date = datetime.strptime(
-            data['event_date'], '%Y-%m-%d %H:%M:%S')
-        event.tags = data.get('tags', [])
-        db.session.commit()
-        return jsonify({'message': 'Event updated successfully'})
-    else:
-        return jsonify({'message': 'Event not found'}), 404
+    try:
+        event = Event.query.get(event_id)
+        if event:
+            data = request.get_json()
+            event.title = data['title']
+            event.description = data['description']
+            event.venue = data['venue']
+            event.event_date = datetime.strptime(
+                data['event_date'], '%Y-%m-%d %H:%M:%S')
+            event.tags = data.get('tags', [])
+            db.session.commit()
+            return jsonify({'message': 'Event updated successfully'})
+        else:
+            return jsonify({'message': 'Event not found'}), 404
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+    except Exception as e:
+        return jsonify({'message': str(e)}), 400
+
 
 # Endpoint to delete a specific event
-
-
 @events_blueprint.route('/events/<int:event_id>', methods=['DELETE'])
 @token_required
 def delete_event(user, event_id):
-    event = Event.query.get(event_id)
-    if event:
-        db.session.delete(event)
-        db.session.commit()
-        return jsonify({'message': 'Event deleted successfully'})
-    else:
-        return jsonify({'message': 'Event not found'}), 404
+    try:
+        event = Event.query.get(event_id)
+        if event:
+            db.session.delete(event)
+            db.session.commit()
+            return jsonify({'message': 'Event deleted successfully'})
+        else:
+            return jsonify({'message': 'Event not found'}), 404
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+    except Exception as e:
+        return jsonify({'message': str(e)}), 400
