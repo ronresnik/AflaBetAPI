@@ -1,161 +1,258 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "Event Management AlfaBet API",
-    "version": "1.0",
-    "description": "API documentation"
+    "title": "Event Management API",
+    "version": "1.0.0",
+    "description": "API for scheduling and managing events"
   },
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "Events",
+      "description": "Endpoints for managing events"
+    },
+    {
+      "name": "Users",
+      "description": "Endpoints for user registration and login"
+    }
+  ],
   "paths": {
-    "/register": {
-      "post": {
-        "summary": "Register a new user",
-        "parameters": [
-          {
-            "name": "User",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/User"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "User registered successfully"
-          },
-          "400": {
-            "description": "Email already exists in the database"
-          }
-        }
-      }
-    },
-    "/login": {
-      "post": {
-        "summary": "Login and get an authentication token",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "type": "string",
-            "description": "Basic authentication with email and password"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Token generated successfully"
-          },
-          "401": {
-            "description": "Invalid credentials"
-          }
-        }
-      }
-    },
     "/events": {
       "post": {
+        "tags": ["Events"],
         "summary": "Schedule a new event",
+        "operationId": "scheduleEvent",
+        "security": [{"BearerAuth": []}],
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
         "parameters": [
           {
-            "name": "Event",
             "in": "body",
+            "name": "event",
+            "description": "Event details",
+            "required": true,
             "schema": {
-              "$ref": "#/definitions/Event"
+              "$ref": "#/definitions/EventInput"
             }
           }
         ],
         "responses": {
           "201": {
-            "description": "Event scheduled successfully"
+            "description": "Event scheduled successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
           }
         }
       },
       "get": {
-        "summary": "Retrieve a list of all scheduled events",
+        "tags": ["Events"],
+        "summary": "Get a list of scheduled events",
+        "operationId": "getEvents",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "location",
+            "description": "Filter by location",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "venue",
+            "description": "Filter by venue",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "description": "Sort by parameter (date, popularity, creation_time)",
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "List of all scheduled events"
+            "description": "List of events",
+            "schema": {
+              "$ref": "#/definitions/EventList"
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
           }
         }
       }
     },
     "/events/{event_id}": {
       "get": {
-        "summary": "Retrieve details of a specific event",
+        "tags": ["Events"],
+        "summary": "Get details of a specific event",
+        "operationId": "getEventDetails",
+        "produces": ["application/json"],
         "parameters": [
           {
-            "name": "event_id",
             "in": "path",
+            "name": "event_id",
+            "description": "ID of the event",
             "required": true,
             "type": "integer"
           }
         ],
         "responses": {
           "200": {
-            "description": "Details of a specific event"
+            "description": "Event details",
+            "schema": {
+              "$ref": "#/definitions/EventDetails"
+            }
           },
           "404": {
-            "description": "Event not found"
+            "description": "Event not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
           }
         }
       },
       "put": {
+        "tags": ["Events"],
         "summary": "Update details of a specific event",
+        "operationId": "updateEvent",
+        "security": [{"BearerAuth": []}],
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
         "parameters": [
           {
-            "name": "event_id",
             "in": "path",
+            "name": "event_id",
+            "description": "ID of the event",
             "required": true,
             "type": "integer"
           },
           {
-            "name": "Event",
             "in": "body",
+            "name": "event",
+            "description": "Event details to update",
+            "required": true,
             "schema": {
-              "$ref": "#/definitions/Event"
+              "$ref": "#/definitions/EventInput"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Event updated successfully"
+            "description": "Event updated successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
           },
           "404": {
-            "description": "Event not found"
+            "description": "Event not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
           }
         }
       },
       "delete": {
+        "tags": ["Events"],
         "summary": "Delete a specific event",
+        "operationId": "deleteEvent",
+        "security": [{"BearerAuth": []}],
         "parameters": [
           {
-            "name": "event_id",
             "in": "path",
+            "name": "event_id",
+            "description": "ID of the event",
             "required": true,
             "type": "integer"
+
           }
         ],
         "responses": {
           "200": {
-            "description": "Event deleted successfully"
+            "description": "Event deleted successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
           },
           "404": {
-            "description": "Event not found"
+            "description": "Event not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
           }
         }
       }
     }
   },
   "definitions": {
-    "User": {
-      "type": "object",
-      "properties": {
-        "email": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        }
-      }
-    },
-    "Event": {
+    "EventInput": {
       "type": "object",
       "properties": {
         "title": {
@@ -167,8 +264,12 @@
         "venue": {
           "type": "string"
         },
-        "event_date": {
+        "location": {
           "type": "string"
+        },
+        "event_date": {
+          "type": "string",
+          "format": "date-time"
         },
         "tags": {
           "type": "array",
@@ -176,7 +277,68 @@
             "type": "string"
           }
         }
+      },
+      "required": ["title", "description", "venue", "location", "event_date"]
+    },
+    "EventList": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EventDetails"
+          }
+        }
       }
+    },
+    "EventDetails": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "venue": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "event_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "participants": {
+          "type": "integer"
+        }
+      },
+      "required": ["id", "title", "description", "venue", "location", "event_date", "tags", "participants"]
+    },
+    "Error": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
     }
   }
 }
