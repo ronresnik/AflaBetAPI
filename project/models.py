@@ -65,12 +65,13 @@ class Event(db.Model):
 
     id = mapped_column(Integer(), primary_key=True, autoincrement=True)
     title = mapped_column(String(255), unique=True, nullable=False)
-    description = mapped_column(String(255), unique=True, nullable=True)
+    description = mapped_column(String(255), nullable=True)
     venue = mapped_column(String(255), nullable=True)
     event_date = mapped_column(DateTime(), nullable=False)
     tags = mapped_column(ARRAY(String(50)), nullable=True)
     participants = mapped_column(Integer(), default=0)
     created_at = mapped_column(DateTime(), default=func.now())
+
     # subscribers = relationship(
     #     'User', secondary=user_event_association, back_populates='events') TODO Implement
 
@@ -81,18 +82,6 @@ class Event(db.Model):
         self.event_date = event_date
         self.tags = tags if tags else []
         self.participants = participants
-
-    def update_event(self, title=None, description=None, venue=None, event_date=None, tags=None):
-        if title:
-            self.title = title
-        if description:
-            self.description = description
-        if venue:
-            self.venue = venue
-        if event_date:
-            self.event_date = event_date
-        if tags is not None:
-            self.tags = tags
 
     def __repr__(self):
         return f'<Event: {self.title} - {self.event_date}>'

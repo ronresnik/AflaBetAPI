@@ -60,7 +60,7 @@ def schedule_event(user):
 
 
 @events_blueprint.route('/events', methods=['GET'])
-def get_all_events():
+def get_events():
     """
     # Retrieve query parameters from the request
     location = request.args.get('location')
@@ -107,8 +107,7 @@ def get_all_events():
 
 # Endpoint to retrieve details of a specific event
 @events_blueprint.route('/events/<int:event_id>', methods=['GET'])
-@token_required
-def get_event_details(user, event_id):
+def get_event_details(event_id):
     try:
         event = Event.query.get(event_id)
         if event:
@@ -135,14 +134,17 @@ def update_event(user, event_id):
     try:
         event = Event.query.get(event_id)
         if event:
+            user_events_ids = [event.id for event in user.events]
+            if event_id not in user_events_ids:
+                return jsonify({'message': "only owners of event can update it"}), 403
             data = request.get_json()
-            event.title = data['title']
-            event.description = data['description']
-            event.venue = data['venue']
+            event.description = data.get('description', event.description)
+            event.venue = data.get('venue', event.venue)
             event.event_date = datetime.strptime(
-                data['event_date'], '%Y-%m-%d %H:%M:%S')
-            event.tags = data.get('tags', [])
-            db.session.commit()
+                data.get('event_date', event.event_date), '%Y-%m-%d %H:%M:%S')
+            event.tags = data.get('tags', event.tags)
+            event.participants = data.get('participants', event.participants)
+            db.session.commit()  # updates the user .events automatically
             return jsonify({'message': 'Event updated successfully'})
         else:
             return jsonify({'message': 'Event not found'}), 404
@@ -160,6 +162,10 @@ def delete_event(user, event_id):
     try:
         event = Event.query.get(event_id)
         if event:
+            user_events_ids = [event.id for event in user.events]
+            if event_id not in user_events_ids:
+                return jsonify({'message': "only owners of event can delete it"}), 403
+            user.events.remove(event)
             db.session.delete(event)
             db.session.commit()
             return jsonify({'message': 'Event deleted successfully'})
