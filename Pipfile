@@ -17,6 +17,7 @@ pytest-flask = "*"
 flask-login = "*"
 flask-wtf = "*"
 pyopenssl = "*"
+validate-email-address = "*"
 
 [dev-packages]
 
