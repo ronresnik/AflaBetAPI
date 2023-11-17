@@ -42,6 +42,7 @@ def schedule_event(user):
             title=data['title'],
             description=data['description'],
             venue=data['venue'],
+            location=data['location'],
             event_date=datetime.strptime(
                 data['event_date'], '%Y-%m-%d %H:%M:%S'),
             tags=data.get('tags', []),
@@ -61,34 +62,37 @@ def schedule_event(user):
 
 @events_blueprint.route('/events', methods=['GET'])
 def get_events():
-    """
-    # Retrieve query parameters from the request
-    location = request.args.get('location')
-    venue = request.args.get('venue')
-    sort_by = request.args.get('sort_by')
-
-    # Construct the base query
-    base_query = Event.query
-
-    # Filter events based on location or venue
-    if location:
-        base_query = base_query.filter(Event.location == location)
-    if venue:
-        base_query = base_query.filter(Event.venue == venue)
-
-    # Retrieve and sort events based on the specified parameter
-    if sort_by == 'date':
-        events = base_query.order_by(Event.event_date).all()
-    elif sort_by == 'popularity':
-        events = base_query.order_by(Event.participants.desc()).all()
-    elif sort_by == 'creation_time':
-        events = base_query.order_by(Event.created_at).all()
-    else:
-        events = base_query.all()
-
-    """
     try:
-        events = Event.query.all()
+        # Retrieve query parameters from the request
+        location = request.args.get('location')
+        venue = request.args.get('venue')
+        sort_by = request.args.get('sort_by')
+
+        # Check if sort_by is a valid option
+        valid_sort_options = ['date', 'popularity', 'creation_time']
+        if sort_by and sort_by not in valid_sort_options:
+            raise ValueError(
+                "Invalid value for sort_by. Must be one of 'date', 'popularity', 'creation_time'.")
+
+        # Construct the base query
+        base_query = Event.query
+
+        # Filter events based on location or venue
+        if location:
+            base_query = base_query.filter(Event.location == location)
+        if venue:
+            base_query = base_query.filter(Event.venue == venue)
+
+        # Retrieve and sort events based on the specified parameter
+        if sort_by == 'date':
+            events = base_query.order_by(Event.event_date).all()
+        elif sort_by == 'popularity':
+            events = base_query.order_by(Event.participants.desc()).all()
+        elif sort_by == 'creation_time':
+            events = base_query.order_by(Event.created_at).all()
+        else:
+            events = base_query.all()
+
         event_list = []
         for event in events:
             event_list.append({
@@ -96,11 +100,14 @@ def get_events():
                 'title': event.title,
                 'description': event.description,
                 'venue': event.venue,
+                'location': event.location,
                 'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
                 'tags': event.tags,
                 'participants': event.participants,
             })
         return jsonify({'events': event_list})
+    except ValueError as ve:
+        return jsonify({'message': str(ve)}), 400
     except Exception as e:
         return jsonify({'message': str(e)}), 500
 
@@ -116,6 +123,7 @@ def get_event_details(event_id):
                 'title': event.title,
                 'description': event.description,
                 'venue': event.venue,
+                'location': event.location,
                 'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
                 'tags': event.tags,
                 'participants': event.participants,
@@ -140,6 +148,7 @@ def update_event(user, event_id):
             data = request.get_json()
             event.description = data.get('description', event.description)
             event.venue = data.get('venue', event.venue)
+            event.location = data.get('location', event.location)
             event.event_date = datetime.strptime(
                 data.get('event_date', event.event_date), '%Y-%m-%d %H:%M:%S')
             event.tags = data.get('tags', event.tags)
