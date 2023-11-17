@@ -25,7 +25,7 @@ def token_required(f):
             data = jwt.decode(
                 token, settings.JWT_HS256_SECRET_KEY, algorithms=["HS256"])
             current_user = User.query.filter_by(
-                public_id=data['public_id']).first()
+                id=data['public_id']).first()
         except Exception as e:
             return jsonify({'message': f'token is invalid, error: {str(e)}'})
 
@@ -34,7 +34,8 @@ def token_required(f):
 
 
 @events_blueprint.route('/events', methods=['POST'])
-def schedule_event():
+@token_required
+def schedule_event(user):
     data = request.get_json()
     new_event = Event(
         title=data['title'],
@@ -51,7 +52,34 @@ def schedule_event():
 
 
 @events_blueprint.route('/events', methods=['GET'])
-def get_all_events():
+@token_required
+def get_all_events(user):
+    """
+    # Retrieve query parameters from the request
+    location = request.args.get('location')
+    venue = request.args.get('venue')
+    sort_by = request.args.get('sort_by')
+
+    # Construct the base query
+    base_query = Event.query
+
+    # Filter events based on location or venue
+    if location:
+        base_query = base_query.filter(Event.location == location)
+    if venue:
+        base_query = base_query.filter(Event.venue == venue)
+
+    # Retrieve and sort events based on the specified parameter
+    if sort_by == 'date':
+        events = base_query.order_by(Event.event_date).all()
+    elif sort_by == 'popularity':
+        events = base_query.order_by(Event.participants.desc()).all()
+    elif sort_by == 'creation_time':
+        events = base_query.order_by(Event.created_at).all()
+    else:
+        events = base_query.all()
+
+    """
     events = Event.query.all()
     event_list = []
     for event in events:
@@ -63,7 +91,6 @@ def get_all_events():
             'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
             'tags': event.tags,
             'participants': event.participants,
-            'subscribers': event.subscribers,
         })
     return jsonify({'events': event_list})
 
@@ -71,7 +98,8 @@ def get_all_events():
 
 
 @events_blueprint.route('/events/<int:event_id>', methods=['GET'])
-def get_event_details(event_id):
+@token_required
+def get_event_details(user, event_id):
     event = Event.query.get(event_id)
     if event:
         event_details = {
@@ -82,7 +110,6 @@ def get_event_details(event_id):
             'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
             'tags': event.tags,
             'participants': event.participants,
-            'subscribers': event.subscribers,
         }
         return jsonify(event_details)
     else:
@@ -92,7 +119,8 @@ def get_event_details(event_id):
 
 
 @events_blueprint.route('/events/<int:event_id>', methods=['PUT'])
-def update_event(event_id):
+@token_required
+def update_event(user, event_id):
     event = Event.query.get(event_id)
     if event:
         data = request.get_json()
@@ -111,7 +139,8 @@ def update_event(event_id):
 
 
 @events_blueprint.route('/events/<int:event_id>', methods=['DELETE'])
-def delete_event(event_id):
+@token_required
+def delete_event(user, event_id):
     event = Event.query.get(event_id)
     if event:
         db.session.delete(event)

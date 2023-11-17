@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "Event Management API",
+    "title": "Event Management AlfaBet API",
     "version": "1.0",
     "description": "API documentation"
   },

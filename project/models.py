@@ -70,16 +70,15 @@ class Event(db.Model):
     tags = mapped_column(ARRAY(String(50)), nullable=True)
     participants = mapped_column(Integer, default=0)
     # subscribers = relationship(
-    #     'User', secondary=user_event_association, back_populates='events')
+    #     'User', secondary=user_event_association, back_populates='events') TODO Implement
 
-    def __init__(self, title, description, venue, event_date, tags=None):
+    def __init__(self, title, description, venue, event_date, tags=None, participants=1):
         self.title = title
         self.description = description
         self.venue = venue
         self.event_date = event_date
         self.tags = tags if tags else []
-        self.participants = 0
-        self.subscribers = 0
+        self.participants = participants
 
     def update_event(self, title=None, description=None, venue=None, event_date=None, tags=None):
         if title:
