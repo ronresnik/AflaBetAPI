@@ -44,6 +44,7 @@ def schedule_event(user):
         event_date=datetime.strptime(data['event_date'], '%Y-%m-%d %H:%M:%S'),
         tags=data.get('tags', []),
     )
+    user.events.append(new_event)
     db.session.add(new_event)
     db.session.commit()
     return jsonify({'message': 'Event scheduled successfully'}), 201
@@ -52,8 +53,7 @@ def schedule_event(user):
 
 
 @events_blueprint.route('/events', methods=['GET'])
-@token_required
-def get_all_events(user):
+def get_all_events():
     """
     # Retrieve query parameters from the request
     location = request.args.get('location')

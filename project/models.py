@@ -4,6 +4,7 @@ from datetime import datetime
 from flask_login import UserMixin
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, ARRAY
 from sqlalchemy.orm import mapped_column, relationship
+from sqlalchemy.sql import func
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from project import db
@@ -34,8 +35,8 @@ class User(UserMixin, db.Model):
     email = mapped_column(String(), unique=True, nullable=False)
     password_hashed = mapped_column(String(128), nullable=False)
     registered_on = mapped_column(DateTime(), nullable=False)
-    # events = relationship(
-    #     'Event', secondary=user_event_association, back_populates='attendees')
+    events = relationship(
+        'Event', secondary=user_event_association)
 
     def __init__(self, email: str, password_plaintext: str):
         """Create a new User object using the email address and hashing the
@@ -62,13 +63,14 @@ class User(UserMixin, db.Model):
 class Event(db.Model):
     __tablename__ = 'events'
 
-    id = mapped_column(Integer, primary_key=True, autoincrement=True)
-    title = mapped_column(String(255), nullable=False)
-    description = mapped_column(Text, nullable=True)
+    id = mapped_column(Integer(), primary_key=True, autoincrement=True)
+    title = mapped_column(String(255), unique=True, nullable=False)
+    description = mapped_column(String(255), unique=True, nullable=True)
     venue = mapped_column(String(255), nullable=True)
-    event_date = mapped_column(DateTime, nullable=False)
+    event_date = mapped_column(DateTime(), nullable=False)
     tags = mapped_column(ARRAY(String(50)), nullable=True)
-    participants = mapped_column(Integer, default=0)
+    participants = mapped_column(Integer(), default=0)
+    created_at = mapped_column(DateTime(), default=func.now())
     # subscribers = relationship(
     #     'User', secondary=user_event_association, back_populates='events') TODO Implement
 
